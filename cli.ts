@@ -30,7 +30,7 @@ async function main() {
         logError("登录失败");
         process.exit(1);
       }
-      log("✅ 设置完成！运行 wechat-opencode start 启动桥接");
+      log("✅ 设置完成！运行 wxcode-bridge start 启动桥接");
       break;
     }
     case "start": {
@@ -109,12 +109,12 @@ async function main() {
     case "help":
     default:
       console.log(`
-wechat-opencode — 微信 ↔ OpenCode 桥接
+wxcode-bridge — 微信 ↔ OpenCode 桥接
 
 用法:
-  wechat-opencode setup    微信扫码登录
-  wechat-opencode start    启动桥接（默认）
-  wechat-opencode help     显示帮助
+  wxcode-bridge setup    微信扫码登录
+  wxcode-bridge start    启动桥接（默认）
+  wxcode-bridge help     显示帮助
 
 前提:
   1. opencode serve --port 4096  (先启动 OpenCode)

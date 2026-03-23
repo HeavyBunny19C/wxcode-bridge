@@ -14,7 +14,7 @@ export const WECHAT_TEXT_BYTE_LIMIT = 2048;
 
 const CONFIG_DIR = path.join(
   process.env.HOME || "~",
-  ".wechat-opencode",
+  ".wxcode-bridge",
 );
 const CREDENTIALS_FILE = path.join(CONFIG_DIR, "account.json");
 const SESSION_FILE = path.join(CONFIG_DIR, "session.json");
@@ -68,9 +68,9 @@ export function saveSyncBuf(buf: string): void {
 }
 
 export function log(msg: string): void {
-  process.stderr.write(`[wechat-opencode] ${msg}\n`);
+  process.stderr.write(`[wxcode-bridge] ${msg}\n`);
 }
 
 export function logError(msg: string): void {
-  process.stderr.write(`[wechat-opencode] ERROR: ${msg}\n`);
+  process.stderr.write(`[wxcode-bridge] ERROR: ${msg}\n`);
 }

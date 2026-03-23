@@ -19,7 +19,7 @@ export function parseCommand(text: string): ParsedCommand | null {
 
 export function getHelpText(): string {
   return [
-    "wechat-opencode 命令:",
+    "wxcode-bridge 命令:",
     "/new — 创建新的 OpenCode 会话",
     "/sessions — 列出所有会话",
     "/switch <id> — 切换到指定会话",

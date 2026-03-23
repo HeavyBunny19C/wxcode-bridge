@@ -3,7 +3,7 @@ import { buildHeaders } from "./auth";
 import { LONG_POLL_TIMEOUT_MS, CHANNEL_VERSION } from "../config";
 
 export function generateClientId(): string {
-  return `wechat-opencode:${Date.now()}:${Math.random().toString(36).slice(2, 11)}`;
+  return `wxcode-bridge:${Date.now()}:${Math.random().toString(36).slice(2, 11)}`;
 }
 
 export async function getUpdates(

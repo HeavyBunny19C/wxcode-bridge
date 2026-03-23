@@ -1,4 +1,4 @@
-# wechat-opencode
+# wxcode-bridge
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
@@ -8,7 +8,7 @@ An open-source bridge connecting WeChat (微信) to OpenCode (sst/opencode). Thi
 
 ```
 ┌─────────────┐     iLink API      ┌──────────────────┐     SDK       ┌─────────────┐
-│  微信 WeChat │ ◄──────────────── │  wechat-opencode  │ ────────────► │  OpenCode   │
+│  微信 WeChat │ ◄──────────────── │  wxcode-bridge  │ ────────────► │  OpenCode   │
 │  (ClawBot)   │  HTTP long-poll   │  (bridge process) │  localhost    │  (AI agent) │
 └─────────────┘                    └──────────────────┘               └─────────────┘
 ```
@@ -22,12 +22,12 @@ An open-source bridge connecting WeChat (微信) to OpenCode (sst/opencode). Thi
 
 2. **Setup WeChat**: Initialize the bridge and scan the QR code (扫码) with your WeChat.
    ```bash
-   npx wechat-opencode setup
+   npx wxcode-bridge setup
    ```
 
 3. **Start Bridge**: Launch the bridge process to start routing messages.
    ```bash
-   npx wechat-opencode start
+   npx wxcode-bridge start
    ```
 
 Once started, you can send messages to the ClawBot in WeChat to interact with OpenCode.

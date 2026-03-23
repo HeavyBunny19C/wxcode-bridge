@@ -38,6 +38,6 @@ describe("sendTextMessage", () => {
     }));
 
     const clientId = await sendTextMessage("https://base.url", "token", "user1", "hello", "ctx1");
-    expect(clientId).toMatch(/^wechat-opencode:/);
+    expect(clientId).toMatch(/^wxcode-bridge:/);
   });
 });
