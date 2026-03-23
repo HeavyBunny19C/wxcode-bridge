@@ -82,8 +82,18 @@ This project uses a reverse-engineered iLink protocol (no official documentation
 - `message_type`: 1 for user, 2 for bot.
 - `item type`: 1 for text, 3 for voice.
 - `syncBuf` for cursor-style pagination and deduplication.
-- Auth: Handled via `X-SIGNATURE-TOKEN` and `X-WECHAT-UIN` headers.
+- **Auth**: Uses `Authorization: Bearer <token>` and `AuthorizationType: ilink_bot_token` headers.
+- **Request Structure**: Message fields must be wrapped in a `msg` object with `base_info`.
 - **Credit**: Ported from [Johnixr/claude-code-wechat-channel](https://github.com/Johnixr/claude-code-wechat-channel) (MIT).
+
+## 📝 Changelog
+
+### v0.1.1 (2026-03-24)
+- **Fix**: Correct iLink API request body structure (fields wrapped in `msg` object)
+- **Fix**: Add `message_state: MSG_STATE_FINISH` field
+- **Fix**: Add API response `ret` field validation for proper error reporting
+- **Fix**: Add missing `log` import in `bridge.ts`
+- **Improvement**: Enhanced error handling and logging
 
 ## 🚀 Quick Start
 

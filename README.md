@@ -82,8 +82,18 @@
 - `message_type`: 1 代表用户，2 代表机器人。
 - `item type`: 1 代表文本，3 代表语音。
 - 使用 `syncBuf` 进行增量同步（游标式分页）。
-- 鉴权：通过 `X-SIGNATURE-TOKEN` 和 `X-WECHAT-UIN` 请求头完成。
+- **鉴权**：通过 `Authorization: Bearer <token>` 和 `AuthorizationType: ilink_bot_token` 请求头完成。
+- **请求结构**：消息字段需包装在 `msg` 对象内，包含 `base_info` 字段。
 - **致谢**：协议实现参考并移植自 [Johnixr/claude-code-wechat-channel](https://github.com/Johnixr/claude-code-wechat-channel) (MIT)。
+
+## 📝 更新日志
+
+### v0.1.1 (2026-03-24)
+- **修复**: 修正 iLink API 请求体结构（字段需包装在 `msg` 对象内）
+- **修复**: 添加 `message_state: MSG_STATE_FINISH` 字段
+- **修复**: 添加 API 响应 `ret` 字段检查，正确报告发送失败
+- **修复**: 修正 `bridge.ts` 中缺失的 `log` 导入
+- **改进**: 增强错误处理和日志记录
 
 ## 🚀 快速开始
 
