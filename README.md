@@ -1,344 +1,192 @@
-# wxcode-bridge
+<h1 align="center">wxcode-bridge</h1>
 
-[![npm version](https://img.shields.io/npm/v/wxcode-bridge)](https://www.npmjs.com/package/wxcode-bridge)
-[![License: MIT](https://img.shields.io/github/license/HeavyBunny19C/wxcode-bridge)](https://github.com/HeavyBunny19C/wxcode-bridge/blob/main/LICENSE)
-[![Node.js](https://img.shields.io/badge/node-%3E%3D18-blue)](https://nodejs.org/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue)](https://www.typescriptlang.org/)
-[![GitHub stars](https://img.shields.io/github/stars/HeavyBunny19C/wxcode-bridge)](https://github.com/HeavyBunny19C/wxcode-bridge/stargazers)
+<p align="center">
+  <strong>让你的 OpenCode 助手住进微信，随时随地，指尖编码。</strong>
+</p>
 
-Open-source bridge connecting WeChat to OpenCode, enabling full remote control of your local AI coding agent from your phone.
+<p align="center">
+  <a href="./README.en.md">English</a> · <a href="./README.md">中文</a>
+</p>
 
-开源的微信与 OpenCode 桥接器，让你能通过手机微信远程控制本地 AI 编程助手。
+<p align="center">
+  <img src="https://img.shields.io/npm/v/wxcode-bridge?style=flat-square&logo=npm" alt="npm" />
+  <img src="https://img.shields.io/badge/node-%3E%3D18-brightgreen?style=flat-square&logo=node.js" alt="Node.js" />
+  <img src="https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/license-MIT-purple?style=flat-square" alt="MIT License" />
+</p>
 
-## Overview / 概述
+<p align="center">
+  <em>你的 AI 助手，现在只需扫码，即可在微信里随叫随到。</em>
+</p>
 
-wxcode-bridge acts as a secure gateway between your personal WeChat account and the OpenCode AI agent running on your local machine. By leveraging the iLink (ClawBot) protocol, it allows you to prompt, review, and approve code changes directly from a WeChat chat interface, effectively giving you a mobile IDE experience for your AI agent.
+## 🤔 这是什么？
 
-This project is designed for developers who use OpenCode and want the flexibility to monitor long-running tasks or trigger quick fixes while away from their workstations.
+想象一下，凌晨两点你正躺在床上，突然想起那个跑了半天的 AI 任务需要确认一下进度。或者你正在通勤的地铁上，想让 AI 帮你预审一段刚提交的代码。
 
-<details>
-<summary>🇨🇳 中文</summary>
+`wxcode-bridge` 就是为了这种时刻诞生的。它像是一座桥梁，把你本地运行的 OpenCode 助手接入到微信里。不需要复杂的 SSH，不需要打开电脑，只要打开那个你每天都在用的微信，就能和你的 AI 助手对话。
 
-wxcode-bridge 是连接个人微信与本地运行的 OpenCode AI 助手之间的安全网关。通过利用 iLink (爪哥/ClawBot) 协议，它允许你直接在微信聊天界面中进行提示、审查和批准代码更改，为你提供移动端的 AI 编程体验。
+**划重点：** 这不是云服务。你的代码依然稳稳地留在你的机器上。`wxcode-bridge` 只是负责搬运聊天消息，让沟通更顺畅。
 
-该项目专为使用 OpenCode 的开发者设计，方便他们在离开工位时监控耗时任务或触发快速修复。
+## 🏗️ 架构
 
-</details>
-
-## Architecture / 架构设计
-
-The bridge operates as a stateless middleware (with local persistence for session tracking) that translates between WeChat's long-polling HTTP protocol and OpenCode's SDK-based session management.
+`wxcode-bridge` 的设计非常轻量，主要分为三个层次：
 
 ```
    ┌──────────────┐                          ┌──────────────────┐                        ┌──────────────┐
-   │   WeChat     │   iLink HTTP API         │  wxcode-bridge   │   OpenCode SDK         │   OpenCode   │
-   │  (ClawBot)   │◄───────────────────────► │                  │◄─────────────────────►  │  (AI Agent)  │
-   │              │  Long-poll + Send        │  Bridge Process  │  Session + Prompt      │              │
+   │   📱 微信     │   iLink HTTP API         │  🌉 wxcode-bridge │   OpenCode SDK        │   🤖 OpenCode │
+   │  (ClawBot)   │◄───────────────────────► │                  │◄────────────────────►  │  (AI Agent)  │
+   │              │  Long-poll + Send        │  桥接进程         │  Session + Prompt      │              │
    └──────────────┘                          └──────────────────┘                        └──────────────┘
          ▲                                          │                                          │
          │                                          ▼                                          ▼
-    iOS WeChat                              ~/.wxcode-bridge/                            localhost:4096
+    iOS 微信                                 ~/.wxcode-bridge/                            localhost:4096
     8.0.70+                                 ├── account.json                             opencode serve
-    ClawBot plugin                          ├── session.json
+    ClawBot 插件                             ├── session.json
                                             └── sync_buf.txt
 ```
 
-The system is divided into three distinct layers:
-1.  **iLink Layer**: Handles the low-level HTTP long-polling protocol, QR code authentication, and message deduplication.
-2.  **Bridge Layer**: The core logic that routes messages, parses slash commands, manages session state, and handles permission approvals.
-3.  **OpenCode Layer**: Communicates with the local OpenCode server via the official SDK to manage sessions and prompts.
+1.  **微信端 (ClawBot)**：作为用户界面，负责消息的收发。
+2.  **桥接层 (wxcode-bridge)**：核心逻辑所在，负责维护与微信服务器的长轮询，解析消息，并转发给 OpenCode。
+3.  **助手端 (OpenCode)**：真正的 AI 大脑，处理任务并生成回复。
 
-<details>
-<summary>🇨🇳 中文</summary>
-
-该桥接器作为一个无状态中间件运行（带有用于会话跟踪的本地持久化），在微信的长轮询 HTTP 协议和 OpenCode 基于 SDK 的会话管理之间进行转换。
-
-系统分为三个不同的层级：
-1.  **iLink 层**：处理底层的 HTTP 长轮询协议、二维码身份验证和消息去重。
-2.  **桥接层**：核心逻辑，负责路由消息、解析斜杠命令、管理会话状态以及处理权限审批。
-3.  **OpenCode 层**：通过官方 SDK 与本地 OpenCode 服务器通信，管理会话和提示词。
-
-</details>
-
-## How It Works / 工作原理
-
-### Message Flow / 消息流转
-
-1.  **Ingress**: When you send a message in WeChat, the ClawBot plugin forwards it to the iLink server.
-2.  **Polling**: The bridge process maintains a long-poll connection via `POST /ilink/bot/get_updates` (35s timeout). It uses a `syncBuf` mechanism to ensure no messages are missed or processed twice.
-3.  **Extraction**: Text is extracted from the incoming payload. The bridge supports standard text, voice-to-text transcriptions, and quoted replies.
-4.  **Routing**:
-    *   **Commands**: If the message starts with `/`, it's handled by the local command dispatcher (e.g., `/new`, `/switch`).
-    *   **Approvals**: If OpenCode is waiting for permission (e.g., to run a command), the bridge parses the response for keywords like "允许" (allow) or "拒绝" (deny).
-    *   **Prompts**: Standard text is forwarded to the active OpenCode session via `session.prompt()`.
-5.  **Egress**: The response from OpenCode is cleaned (markdown stripped), split into 2048-byte chunks (WeChat's limit), and sent back via `POST /ilink/bot/send_message`.
-
-### Authentication / 身份验证
-
-The bridge uses a QR-based authentication flow:
-1.  Request a bot QR code from iLink.
-2.  Render the QR code in the terminal using `qrcode-terminal`.
-3.  Poll the status endpoint until the user scans and confirms on their iOS device.
-4.  Save the resulting credentials to `~/.wxcode-bridge/account.json` with restricted permissions (chmod 600).
-
-### Resilience / 容错机制
-
-*   **Network**: Long-poll timeouts (AbortError) are handled gracefully as part of the normal protocol cycle.
-*   **Backoff**: Consecutive failures trigger an exponential backoff strategy to prevent spamming the iLink API during outages.
-*   **Persistence**: Current session IDs and sync buffers are persisted to disk, allowing the bridge to resume exactly where it left off after a restart.
-
-<details>
-<summary>🇨🇳 中文</summary>
+## ⚡ 工作原理
 
 ### 消息流转
-1.  **进入**：当你在微信中发送消息时，爪哥 (ClawBot) 插件将其转发到 iLink 服务器。
-2.  **轮询**：桥接进程通过 `POST /ilink/bot/get_updates`（35秒超时）维持长轮询连接。它使用 `syncBuf` 机制确保消息不遗漏且不重复处理。
-3.  **提取**：从传入的负载中提取文本。桥接器支持标准文本、语音转文字结果以及引用回复。
-4.  **路由**：
-    *   **命令**：如果消息以 `/` 开头，则由本地命令调度程序处理（如 `/new`, `/switch`）。
-    *   **审批**：如果 OpenCode 正在等待权限（例如运行命令），桥接器会解析响应中的关键词，如“允许”或“拒绝”。
-    *   **提示**：标准文本通过 `session.prompt()` 转发到活动的 OpenCode 会话。
-5.  **发出**：OpenCode 的响应经过清理（去除 Markdown）、按 2048 字节拆分（微信限制），然后通过 `POST /ilink/bot/send_message` 发回。
 
-### 身份验证
-桥接器使用基于二维码的验证流程：
-1.  从 iLink 请求机器人二维码。
-2.  使用 `qrcode-terminal` 在终端渲染二维码。
-3.  轮询状态接口，直到用户在 iOS 设备上扫码并确认。
-4.  将生成的凭据保存到 `~/.wxcode-bridge/account.json`，并设置严格权限 (chmod 600)。
+1.  你在微信里发条消息 → ClawBot 插件捕获它 → 发送到 iLink 服务器暂存。
+2.  `wxcode-bridge` 每 35 秒进行一次长轮询 (Long-poll) → 抓取新消息。
+3.  提取文本内容（支持纯文本、语音转文字、引用回复）。
+4.  **指令判断**：是斜杠命令（如 `/new`）？本地处理。是权限申请？解析同意或拒绝。否则，转发给 OpenCode。
+5.  OpenCode 给出回复 → 剥离 Markdown 格式 → 按 2048 字节切片 → 发回微信。
 
-### 容错机制
-*   **网络**：长轮询超时 (AbortError) 被视为正常协议循环的一部分妥善处理。
-*   **退避**：连续失败会触发指数退避策略，防止在服务中断期间过度请求 iLink API。
-*   **持久化**：当前的会话 ID 和同步缓冲被持久化到磁盘，允许桥接器在重启后恢复到之前的状态。
+### 扫码登录
 
-</details>
+登录过程是一个严谨的状态机：
+- 获取登录二维码 → 在终端显示。
+- 轮询状态：等待扫码 → 已扫码 → 已确认（或过期）。
+- 成功后保存凭据到 `account.json`，并设置 `chmod 600` 权限保护隐私。
 
-## iLink Protocol / iLink 协议
+整个登录过程有 480 秒的总限时，每 35 秒轮询一次，重试间隔 2 秒。
 
-The iLink protocol is a reverse-engineered interface used by WeChat's internal bot platform. It is primarily accessed through the ClawBot plugin on iOS.
+### 韧性设计
 
-*   **Pattern**: HTTP-based long-polling, similar in design to the Telegram Bot API.
-*   **Message Types**: `message_type=1` for user messages, `message_type=2` for bot responses.
-*   **Item Types**: `type=1` for plain text, `type=3` for voice transcriptions.
-*   **Deduplication**: Uses a `sync_buf` (cursor) to track the last seen message.
-*   **Security**: Requires an `X-SIGNATURE-TOKEN` and a consistent `X-WECHAT-UIN` for all requests.
+- **AbortError 处理**：长轮询超时被视为正常现象，而非错误。
+- **故障退避**：连续 3 次失败后，会自动进入 30 秒的冷却期，避免频繁请求。
+- **持久化**：会话状态保存到磁盘，重启后可自动恢复。
+- **防重机制**：通过 `sync_buf.txt` 记录游标，确保消息不重不漏。
 
-*Special thanks to the [Johnixr/claude-code-wechat-channel](https://github.com/Johnixr/claude-code-wechat-channel) project for the initial protocol implementation reference.*
+## 🔗 iLink 协议
 
-<details>
-<summary>🇨🇳 中文</summary>
+本项目使用了逆向工程实现的 iLink 协议（目前尚无官方文档）：
+- 采用类似 Telegram Bot API 的 HTTP 长轮询模式。
+- `message_type`: 1 代表用户，2 代表机器人。
+- `item type`: 1 代表文本，3 代表语音。
+- 使用 `syncBuf` 进行增量同步（游标式分页）。
+- 鉴权：通过 `X-SIGNATURE-TOKEN` 和 `X-WECHAT-UIN` 请求头完成。
+- **致谢**：协议实现参考并移植自 [Johnixr/claude-code-wechat-channel](https://github.com/Johnixr/claude-code-wechat-channel) (MIT)。
 
-iLink 协议是微信内部机器人平台使用的逆向工程接口。它主要通过 iOS 上的爪哥 (ClawBot) 插件访问。
+## 🚀 快速开始
 
-*   **模式**：基于 HTTP 的长轮询，设计上类似于 Telegram Bot API。
-*   **消息类型**：`message_type=1` 为用户消息，`message_type=2` 为机器人响应。
-*   **项类型**：`type=1` 为纯文本，`type=3` 为语音转文字。
-*   **去重**：使用 `sync_buf`（游标）跟踪最后看到的消息。
-*   **安全**：所有请求都需要 `X-SIGNATURE-TOKEN` 和一致的 `X-WECHAT-UIN`。
+只需三步，开启你的微信编程之旅：
 
-*特别感谢 [Johnixr/claude-code-wechat-channel](https://github.com/Johnixr/claude-code-wechat-channel) 项目提供的初始协议实现参考。*
-
-</details>
-
-## Quick Start / 快速开始
-
-1.  **Start OpenCode**: Ensure your OpenCode server is running locally.
+1.  **启动 OpenCode 服务**：
     ```bash
-    opencode serve --port 4096
+    opencode serve
     ```
 
-2.  **Setup Bridge**: Initialize the bridge and scan the QR code with your WeChat (iOS only).
-    ```bash
-    npx wxcode-bridge setup
-    ```
-
-3.  **Start Bridge**: Launch the background process.
+2.  **安装并启动桥接器**：
     ```bash
     npx wxcode-bridge start
     ```
 
-<details>
-<summary>🇨🇳 中文</summary>
+3.  **扫码登录**：
+    终端会显示二维码，拿出手机扫一扫，确认登录即可。
 
-1.  **启动 OpenCode**：确保你的 OpenCode 服务器在本地运行。
-    ```bash
-    opencode serve --port 4096
-    ```
+## 💬 命令
 
-2.  **设置桥接器**：初始化桥接器并用微信扫码（仅限 iOS）。
-    ```bash
-    npx wxcode-bridge setup
-    ```
+在微信对话框输入以下命令即可操控：
 
-3.  **启动桥接器**：启动后台进程。
-    ```bash
-    npx wxcode-bridge start
-    ```
+| 命令 | 说明 |
+| :--- | :--- |
+| `/new` | 开启一个新的对话会话 |
+| `/switch` | 切换到其他已有的会话 |
+| `/help` | 显示帮助信息和可用命令列表 |
+| `/status` | 查看当前连接状态和 OpenCode 运行情况 |
 
-</details>
+## ⚙️ 配置
 
-## Commands / 命令列表
+所有的配置和数据都存放在 `~/.wxcode-bridge/` 目录下：
+- `account.json`: 微信登录凭据（请妥善保管）。
+- `session.json`: 当前 OpenCode 会话信息。
+- `sync_buf.txt`: 消息同步游标。
 
-| Command | Description | 描述 |
+### 核心常量
+
+| 常量 | 默认值 | 用途 |
 | :--- | :--- | :--- |
-| `/new` | Create a new OpenCode session | 创建新的 OpenCode 会话 |
-| `/sessions` | List all active sessions | 列出所有活动会话 |
-| `/switch <id>` | Switch to a specific session by ID | 通过 ID 切换到特定会话 |
-| `/help` | Show the help message | 显示帮助信息 |
+| `LONG_POLL_TIMEOUT_MS` | 35,000 | iLink 长轮询超时时间 |
+| `MAX_CONSECUTIVE_FAILURES` | 3 | 触发退避机制前的最大连续失败次数 |
+| `BACKOFF_DELAY_MS` | 30,000 | 触发退避后的冷却时间 |
+| `RETRY_DELAY_MS` | 2,000 | 轮询重试间隔 |
+| `WECHAT_TEXT_BYTE_LIMIT` | 2,048 | 微信单条消息最大字节数 |
 
-<details>
-<summary>🇨🇳 中文</summary>
+## ⚠️ 已知限制
 
-在微信聊天框中输入上述斜杠命令即可直接控制桥接器行为。
+- ⚠️ **Markdown 支持**：微信原生不支持 Markdown，因此回复会被剥离格式，以纯文本显示。
+- ⚠️ **文件传输**：目前仅支持文本和语音（转文字），暂不支持直接通过微信发送文件给 AI。
+- ⚠️ **网络要求**：运行桥接器的机器需要能够访问外网（连接微信服务器）以及本地的 OpenCode 服务。
 
-</details>
+## 🛠️ 开发
 
-## Configuration / 配置说明
+项目结构清晰，方便二次开发：
 
-All configuration and state files are stored in `~/.wxcode-bridge/`:
-
-*   `account.json`: iLink authentication tokens and UIN.
-*   `session.json`: The ID of the currently active OpenCode session.
-*   `sync_buf.txt`: The cursor for the iLink message stream.
-
-**Environment Variables**:
-*   `OPENCODE_BASE_URL`: The URL of your OpenCode server (default: `http://localhost:4096`).
-
-<details>
-<summary>🇨🇳 中文</summary>
-
-所有配置和状态文件都存储在 `~/.wxcode-bridge/` 目录下：
-*   `account.json`：iLink 身份验证令牌和 UIN。
-*   `session.json`：当前活动的 OpenCode 会话 ID。
-*   `sync_buf.txt`：iLink 消息流的游标。
-
-**环境变量**：
-*   `OPENCODE_BASE_URL`：OpenCode 服务器的 URL（默认：`http://localhost:4096`）。
-
-</details>
-
-## Limitations / 已知限制
-
-*   **iOS Only**: The ClawBot plugin is currently exclusive to iOS WeChat.
-*   **Token Expiry**: Tokens typically expire every 24 hours, requiring a fresh `setup` (QR scan).
-*   **Message Size**: WeChat limits messages to 2048 bytes. The bridge automatically splits long responses, but very large outputs may be truncated or delayed.
-*   **Media**: Only text and voice transcriptions are supported. Images, files, and location sharing are not implemented.
-*   **Single User**: The bridge is designed for personal use and does not support multiple concurrent WeChat users.
-
-<details>
-<summary>🇨🇳 中文</summary>
-
-*   **仅限 iOS**：爪哥插件目前仅在 iOS 版微信中可用。
-*   **令牌过期**：令牌通常每 24 小时过期一次，需要重新运行 `setup` 扫码。
-*   **消息大小**：微信限制单条消息为 2048 字节。桥接器会自动拆分长响应，但极大的输出可能会被截断或延迟。
-*   **媒体支持**：仅支持文本和语音转文字。尚未实现图片、文件和位置共享。
-*   **单用户**：桥接器专为个人使用设计，不支持多个微信用户同时使用。
-
-</details>
-
-## Development / 开发指南
-
-### Scripts / 脚本
-*   `npm run build`: Compile TypeScript to JavaScript.
-*   `npm run typecheck`: Run static type analysis.
-*   `npm test`: Execute unit tests (39 tests).
-*   `npm run test:e2e`: Run end-to-end tests (requires a live OpenCode server).
-
-### Project Structure / 项目结构
-```text
+```
 wxcode-bridge/
-├── cli.ts                    # CLI entry point (setup / start / help)
+├── cli.ts                    # CLI 入口 (安装 / 启动 / 帮助)
 ├── src/
 │   ├── ilink/
-│   │   ├── types.ts          # iLink message types and text extraction
-│   │   ├── auth.ts           # QR scan login flow
-│   │   └── client.ts         # Long-poll getUpdates + sendMessage
+│   │   ├── types.ts          # iLink 消息类型定义与文本提取
+│   │   ├── auth.ts           # 二维码扫码登录流程
+│   │   └── client.ts         # 长轮询 getUpdates 与 sendMessage
 │   ├── opencode/
-│   │   ├── client.ts         # OpenCode SDK wrapper (session mgmt)
-│   │   ├── formatter.ts      # Markdown → WeChat plain text
-│   │   └── permissions.ts    # Permission approval flow
-│   ├── bridge.ts             # Core message routing
-│   ├── commands.ts           # Slash commands (/new /switch /help)
-│   └── config.ts             # Constants, credential I/O, logging
-├── tests/                    # Unit tests (vitest)
-├── tests/e2e/                # E2E tests (requires live OpenCode)
-├── vitest.config.ts
-└── vitest.e2e.config.ts
+│   │   ├── client.ts         # OpenCode SDK 封装 (会话管理)
+│   │   ├── formatter.ts      # Markdown 转微信纯文本
+│   │   └── permissions.ts    # 权限审批流程 (同意/拒绝)
+│   ├── bridge.ts             # 核心消息路由逻辑
+│   ├── commands.ts           # 斜杠命令处理 (/new /switch /help)
+│   └── config.ts             # 常量定义、凭据 I/O、日志记录
+├── tests/                    # 单元测试 (39 个测试用例, 使用 vitest)
+└── tests/e2e/                # 端到端测试 (4 个测试用例, 针对真实 OpenCode)
 ```
 
-<details>
-<summary>🇨🇳 中文</summary>
-
-### 脚本
-*   `npm run build`：将 TypeScript 编译为 JavaScript。
-*   `npm run typecheck`：运行静态类型分析。
-*   `npm test`：执行单元测试（共 39 个测试）。
-*   `npm run test:e2e`：运行端到端测试（需要运行中的 OpenCode 服务器）。
-
-### 项目结构
-*   `cli.ts`：命令行入口（setup / start / help）。
-*   `src/ilink/`：iLink 协议客户端（类型、认证、长轮询）。
-*   `src/opencode/`：OpenCode SDK 封装（会话、格式化、权限）。
-*   `src/bridge.ts`：核心消息路由。
-*   `src/commands.ts`：斜杠命令解析。
-*   `src/config.ts`：常量、凭据读写、日志。
-
-</details>
-
-## Changelog / 更新日志
+## 📋 更新日志
 
 ### v0.1.0 (2026-03-23)
 
-**Features**
-*   Initial release of the WeChat-to-OpenCode bridge.
-*   Full iLink protocol support (QR login, long-polling, message sending).
-*   Seamless OpenCode SDK integration for session and prompt management.
-*   Intelligent message routing with slash command support.
-*   WeChat-based permission approval flow (Allow/Deny).
-*   Automatic markdown stripping and message splitting for WeChat compatibility.
-*   Persistent session state and sync buffer recovery.
+**🎉 新特性**
+- 初始版本发布。
+- 完整的 iLink 协议客户端（支持二维码登录、长轮询、消息发送）。
+- 深度集成 OpenCode SDK（支持会话管理、提示词交互）。
+- 核心桥接逻辑，支持消息路由与斜杠命令。
+- 完善的权限审批流（可在微信端直接同意或拒绝 AI 的操作）。
+- 自动剥离 Markdown 格式并支持长消息自动切片。
+- 会话持久化与自动恢复功能。
 
-**Bug Fixes**
-*   Resolved issue where `global.health()` was called on the SDK (switched to `session.list()`).
-*   Fixed mapping of `TextPart.content` to the correct `TextPart.text` field.
-*   Corrected binary path configuration for npm distribution.
+**🐛 修复**
+- 修复：SDK 缺少 `global.health()` 方法，现改用 `session.list()` 进行连通性检查。
+- 修复：`TextPart.content` 属性不存在的问题，已修正为 `TextPart.text`。
+- 修复：npm bin 路径配置错误导致无法全局调用的问题。
 
-**Testing**
-*   39 unit tests covering protocol, routing, and utility modules.
-*   4 end-to-end tests verifying live integration with OpenCode.
+**🧪 测试**
+- 包含 39 个单元测试，覆盖所有核心模块。
+- 包含 4 个端到端测试，确保与真实 OpenCode 服务协作正常。
 
-<details>
-<summary>🇨🇳 中文</summary>
+## 🙏 致谢
 
-### v0.1.0 (2026-03-23)
+- [Johnixr/claude-code-wechat-channel](https://github.com/Johnixr/claude-code-wechat-channel) (MIT) — iLink 协议实现的先行者。
+- [sst/opencode](https://github.com/sst/opencode) — 强大的 AI 编程助手。
+- 微信 ClawBot — 优秀的机器人平台。
 
-**特性**
-*   微信-OpenCode 桥接器初始版本发布。
-*   完整的 iLink 协议支持（扫码登录、长轮询、消息发送）。
-*   无缝集成 OpenCode SDK，用于会话和提示词管理。
-*   支持斜杠命令的智能消息路由。
-*   基于微信的权限审批流程（允许/拒绝）。
-*   自动去除 Markdown 并拆分消息，以兼容微信限制。
-*   持久化的会话状态和同步缓冲恢复。
+## 许可证
 
-**修复**
-*   解决了 SDK 上调用不存在的 `global.health()` 的问题（改为使用 `session.list()`）。
-*   修复了 `TextPart.content` 到 `TextPart.text` 字段的映射。
-*   修正了 npm 分发的二进制路径配置。
-
-**测试**
-*   39 个单元测试，覆盖协议、路由和工具模块。
-*   4 个端到端测试，验证与 OpenCode 的实时集成。
-
-</details>
-
-## Credits / 致谢
-
-*   [Johnixr/claude-code-wechat-channel](https://github.com/Johnixr/claude-code-wechat-channel) — For the excellent iLink protocol reference.
-*   [sst/opencode](https://github.com/sst/opencode) — For the powerful AI coding agent.
-*   **WeChat ClawBot** — For providing the bot platform.
-
-## License
-
-MIT © HeavyBunny19C
+MIT
