@@ -169,8 +169,6 @@ wxcode-bridge/
 └── tests/e2e/                # E2E tests (4 tests, against live OpenCode)
 ```
 
-## 📋 Changelog
-
 ### v0.1.0 (2026-03-23)
 
 **🎉 Features**
