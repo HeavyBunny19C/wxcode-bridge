@@ -1,0 +1,32 @@
+{
+  "name": "wechat-opencode",
+  "version": "0.1.0",
+  "description": "Bridge WeChat to OpenCode — control your AI coding agent from WeChat",
+  "type": "module",
+  "bin": {
+    "wechat-opencode": "./dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "start": "tsx cli.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@opencode-ai/sdk": "latest",
+    "qrcode-terminal": "^0.12.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "msw": "^2.0.0",
+    "tsx": "^4.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "license": "MIT",
+  "keywords": ["wechat", "opencode", "ai", "coding-agent", "clawbot", "ilink", "bridge"]
+}
