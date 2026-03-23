@@ -95,6 +95,26 @@ This project uses a reverse-engineered iLink protocol (no official documentation
 - **Fix**: Add missing `log` import in `bridge.ts`
 - **Improvement**: Enhanced error handling and logging
 
+### v0.1.0 (2026-03-23)
+
+**🎉 Features**
+- Initial release.
+- Complete iLink protocol client (QR login, long-polling, message sending).
+- Deep OpenCode SDK integration (session management, prompt interaction).
+- Core bridge logic with message routing and slash commands.
+- Permission approval flow (allow/deny AI operations from WeChat).
+- Automatic Markdown stripping and long message splitting.
+- Session persistence and auto-recovery.
+
+**🐛 Fixes**
+- Fixed: SDK missing `global.health()` method, now uses `session.list()` for health check.
+- Fixed: `TextPart.content` property doesn't exist, corrected to `TextPart.text`.
+- Fixed: npm bin path configuration error preventing global invocation.
+
+**🧪 Tests**
+- 39 unit tests covering all core modules.
+- 4 end-to-end tests for real OpenCode service integration.
+
 ## 🚀 Quick Start
 
 Get up and running in three simple steps:
@@ -168,26 +188,6 @@ wxcode-bridge/
 ├── tests/                    # Unit tests (39 tests, powered by vitest)
 └── tests/e2e/                # E2E tests (4 tests, against live OpenCode)
 ```
-
-### v0.1.0 (2026-03-23)
-
-**🎉 Features**
-- Initial release.
-- iLink protocol client (QR login, long-poll, send).
-- OpenCode SDK integration (session management, prompting).
-- Core bridge with message routing and slash commands.
-- Permission approval flow (Allow/Deny directly from WeChat).
-- Markdown stripping and automatic message splitting.
-- Session persistence and auto-recovery.
-
-**🐛 Bug Fixes**
-- Fix: SDK missing `global.health()` → switched to `session.list()` for health checks.
-- Fix: `TextPart.content` was undefined → corrected to `TextPart.text`.
-- Fix: Invalid npm bin path configuration.
-
-**🧪 Testing**
-- 39 unit tests covering all core modules.
-- 4 e2e tests verifying integration with a live OpenCode server.
 
 ## 🙏 Credits
 
