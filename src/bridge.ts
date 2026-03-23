@@ -2,7 +2,7 @@ import { type WeixinMessage, extractTextFromMessage, MSG_TYPE_USER } from "./ili
 import { parseCommand, getHelpText } from "./commands";
 import { formatForWechat, splitMessage } from "./opencode/formatter";
 import { PermissionHandler } from "./opencode/permissions";
-import { WECHAT_TEXT_BYTE_LIMIT, logError } from "./config";
+import { WECHAT_TEXT_BYTE_LIMIT, log, logError } from "./config";
 
 interface BridgeDeps {
   sendText: (toUserId: string, text: string, contextToken?: string) => Promise<string>;
@@ -58,11 +58,15 @@ export class Bridge {
       const sessionId = this.sessionId!;
 
       const rawResponse = await this.deps.sendPrompt(sessionId, text);
+      log(`OpenCode 回复 (${rawResponse.length} chars): ${rawResponse.slice(0, 100)}`);
       const formatted = formatForWechat(rawResponse);
       const parts = splitMessage(formatted, WECHAT_TEXT_BYTE_LIMIT);
+      log(`发送 ${parts.length} 条消息到微信`);
 
       for (const part of parts) {
+        log(`sending to WeChat: ${part.slice(0, 80)}...`);
         await this.deps.sendText(fromUserId, part, contextToken);
+        log(`sent OK`);
       }
     } catch (err: any) {
       logError(`handleIncomingMessage: ${err?.message ?? err}`);

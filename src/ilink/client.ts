@@ -1,6 +1,7 @@
-import type { GetUpdatesResponse } from "./types";
+import type { GetUpdatesResponse, SendMessageResponse } from "./types";
+import { MSG_STATE_FINISH } from "./types";
 import { buildHeaders } from "./auth";
-import { LONG_POLL_TIMEOUT_MS, CHANNEL_VERSION } from "../config";
+import { LONG_POLL_TIMEOUT_MS, CHANNEL_VERSION, log } from "../config";
 
 export function generateClientId(): string {
   return `wxcode-bridge:${Date.now()}:${Math.random().toString(36).slice(2, 11)}`;
@@ -51,16 +52,22 @@ export async function sendTextMessage(
   const url = `${baseUrl}/ilink/bot/sendmessage`;
   
   const body = JSON.stringify({
-    to_user_id: toUserId,
-    client_id: clientId,
-    message_type: 2,
-    item_list: [{
-      type: 1,
-      text_item: { text },
-    }],
-    context_token: contextToken,
-    channel_version: CHANNEL_VERSION,
+    base_info: {
+      channel_version: CHANNEL_VERSION,
+    },
+    msg: {
+      to_user_id: toUserId,
+      client_id: clientId,
+      message_type: 2,
+      message_state: MSG_STATE_FINISH,
+      context_token: contextToken,
+      item_list: [{
+        type: 1,
+        text_item: { text },
+      }],
+    },
   });
+
 
   const response = await fetch(url, {
     method: "POST",
@@ -68,8 +75,17 @@ export async function sendTextMessage(
     body,
   });
 
+  log(`sendmessage response: ${response.status}`);
+  const respText = await response.text();
+  log(`sendmessage body: ${respText.slice(0, 200)}`);
+
   if (!response.ok) {
-    throw new Error(`sendTextMessage failed: ${response.status}`);
+    throw new Error(`sendTextMessage HTTP failed: ${response.status} ${respText}`);
+  }
+
+  const data = JSON.parse(respText) as SendMessageResponse;
+  if (data.ret !== 0) {
+    throw new Error(`sendTextMessage API error: ret=${data.ret} errcode=${data.errcode} errmsg=${data.errmsg}`);
   }
 
   return clientId;

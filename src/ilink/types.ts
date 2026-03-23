@@ -64,6 +64,13 @@ export interface AccountData {
   savedAt: string;
 }
 
+export interface SendMessageResponse {
+  ret: number;
+  errcode?: number;
+  errmsg?: string;
+  client_id?: string;
+}
+
 // ── Message Parsing ──
 export function extractTextFromMessage(msg: WeixinMessage): string {
   if (!msg.item_list?.length) return "";

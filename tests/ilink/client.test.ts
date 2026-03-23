@@ -34,10 +34,20 @@ describe("sendTextMessage", () => {
   it("sends message and returns client_id", async () => {
     vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
       ok: true,
-      text: () => Promise.resolve("{}"),
+      text: () => Promise.resolve(JSON.stringify({ ret: 0 })),
     }));
 
     const clientId = await sendTextMessage("https://base.url", "token", "user1", "hello", "ctx1");
     expect(clientId).toMatch(/^wxcode-bridge:/);
+  });
+
+  it("throws on ret != 0", async () => {
+    vi.stubGlobal("fetch", vi.fn().mockResolvedValue({
+      ok: true,
+      text: () => Promise.resolve(JSON.stringify({ ret: -2, errmsg: "parameter error" })),
+    }));
+
+    await expect(sendTextMessage("https://base.url", "token", "user1", "hello", "ctx1"))
+      .rejects.toThrow("ret=-2");
   });
 });

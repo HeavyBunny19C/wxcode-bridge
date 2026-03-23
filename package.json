@@ -1,6 +1,6 @@
 {
   "name": "wxcode-bridge",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Bridge WeChat to OpenCode — control your AI coding agent from WeChat",
   "type": "module",
   "bin": {
