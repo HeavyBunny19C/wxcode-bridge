@@ -3,12 +3,11 @@ import { OpenCodeClient } from "../../src/opencode/client";
 
 vi.mock("@opencode-ai/sdk", () => ({
   createOpencodeClient: vi.fn(() => ({
-    global: { health: vi.fn().mockResolvedValue({ data: { healthy: true, version: "1.2.27" } }) },
     session: {
       create: vi.fn().mockResolvedValue({ data: { id: "ses_123" } }),
       list: vi.fn().mockResolvedValue({ data: [{ id: "ses_123", title: "test" }] }),
       prompt: vi.fn().mockResolvedValue({
-        data: { parts: [{ type: "text", content: "Here is the code fix." }] },
+        data: { parts: [{ type: "text", text: "Here is the code fix." }] },
       }),
     },
   })),

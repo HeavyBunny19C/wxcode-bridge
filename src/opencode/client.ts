@@ -10,22 +10,24 @@ export class OpenCodeClient {
 
   async isHealthy(): Promise<boolean> {
     try {
-      const health = await this.client.global.health();
-      return health.data?.healthy === true;
+      // SDK has no dedicated health endpoint; listing sessions validates connectivity
+      const result = await this.client.session.list();
+      return Array.isArray(result.data);
     } catch {
       return false;
     }
   }
 
   async createSession(): Promise<string> {
-    const session = await this.client.session.create({ body: {} });
-    log(`新建 session: ${session.data.id}`);
-    return session.data.id;
+    const session = await this.client.session.create();
+    const data = session.data as any;
+    log(`新建 session: ${data.id}`);
+    return data.id;
   }
 
   async listSessions(): Promise<Array<{ id: string; title?: string }>> {
     const result = await this.client.session.list();
-    return result.data ?? [];
+    return (result.data as any[]) ?? [];
   }
 
   async sendPrompt(sessionId: string, text: string): Promise<string> {
@@ -33,14 +35,15 @@ export class OpenCodeClient {
     const result = await this.client.session.prompt({
       path: { id: sessionId },
       body: {
-        parts: [{ type: "text", text }],
+        parts: [{ type: "text" as const, text }],
       },
     });
 
-    const parts = result.data?.parts ?? [];
+    const data = result.data as any;
+    const parts: any[] = data?.parts ?? [];
     const textParts = parts
-      .filter((p: any) => p.type === "text")
-      .map((p: any) => p.content ?? p.text ?? "");
+      .filter((p) => p.type === "text")
+      .map((p) => p.text ?? "");
     return textParts.join("\n");
   }
 }
