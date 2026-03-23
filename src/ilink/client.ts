@@ -12,16 +12,16 @@ export async function getUpdates(
   syncBuf: string
 ): Promise<GetUpdatesResponse> {
   try {
-    const url = `${baseUrl}/ilink/bot/get_updates`;
-    const body = {
+    const url = `${baseUrl}/ilink/bot/getupdates`;
+    const body = JSON.stringify({
       get_updates_buf: syncBuf,
       longpolling_timeout_ms: LONG_POLL_TIMEOUT_MS,
-    };
+    });
 
     const response = await fetch(url, {
       method: "POST",
       headers: buildHeaders(token, body),
-      body: JSON.stringify(body),
+      body,
       signal: AbortSignal.timeout(LONG_POLL_TIMEOUT_MS + 5000),
     });
 
@@ -48,24 +48,24 @@ export async function sendTextMessage(
   contextToken?: string
 ): Promise<string> {
   const clientId = generateClientId();
-  const url = `${baseUrl}/ilink/bot/send_message`;
+  const url = `${baseUrl}/ilink/bot/sendmessage`;
   
-  const body = {
+  const body = JSON.stringify({
     to_user_id: toUserId,
     client_id: clientId,
-    message_type: 2, // bot message
+    message_type: 2,
     item_list: [{
-      type: 1, // text
+      type: 1,
       text_item: { text },
     }],
     context_token: contextToken,
     channel_version: CHANNEL_VERSION,
-  };
+  });
 
   const response = await fetch(url, {
     method: "POST",
     headers: buildHeaders(token, body),
-    body: JSON.stringify(body),
+    body,
   });
 
   if (!response.ok) {

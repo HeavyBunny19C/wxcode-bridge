@@ -5,17 +5,17 @@ export function randomWechatUin(): string {
   return Math.floor(Math.random() * 1e15).toString();
 }
 
-export function buildHeaders(token?: string, body?: any): HeadersInit {
-  const headers: HeadersInit = {
+export function buildHeaders(token?: string, body?: string): HeadersInit {
+  const headers: Record<string, string> = {
     "Content-Type": "application/json",
+    "AuthorizationType": "ilink_bot_token",
     "X-WECHAT-UIN": randomWechatUin(),
   };
-  if (token) {
-    headers["X-SIGNATURE-TOKEN"] = token;
-  }
   if (body) {
-    headers["X-SIGNATURE-VERSION"] = "1";
-    headers["X-SIGNATURE-METHOD"] = "hmacsha256";
+    headers["Content-Length"] = String(Buffer.byteLength(body, "utf-8"));
+  }
+  if (token?.trim()) {
+    headers["Authorization"] = `Bearer ${token.trim()}`;
   }
   return headers;
 }
@@ -50,9 +50,10 @@ export async function doQRLogin(baseUrl: string): Promise<AccountData | null> {
     log("获取登录二维码...");
     const qrData = await fetchQRCode(baseUrl);
     
-    const qrcode = await import("qrcode-terminal" as string);
+    const qrcodeModule: any = await import("qrcode-terminal");
+    const qrcode = qrcodeModule.default || qrcodeModule;
     log("请用微信扫描二维码登录:");
-    (qrcode as any).generate(qrData.qrcode_img_content, { small: true });
+    qrcode.generate(qrData.qrcode_img_content, { small: true });
     
     const deadline = Date.now() + 480_000;
     while (Date.now() < deadline) {
