@@ -4,7 +4,7 @@
   "description": "Bridge WeChat to OpenCode — control your AI coding agent from WeChat",
   "type": "module",
   "bin": {
-    "wxcode-bridge": "./dist/cli.js"
+    "wxcode-bridge": "dist/cli.js"
   },
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
