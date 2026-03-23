@@ -6,8 +6,13 @@ vi.mock("@opencode-ai/sdk", () => ({
     session: {
       create: vi.fn().mockResolvedValue({ data: { id: "ses_123" } }),
       list: vi.fn().mockResolvedValue({ data: [{ id: "ses_123", title: "test" }] }),
-      prompt: vi.fn().mockResolvedValue({
-        data: { parts: [{ type: "text", text: "Here is the code fix." }] },
+      promptAsync: vi.fn().mockResolvedValue({ data: undefined }),
+      status: vi.fn().mockResolvedValue({ data: { ses_123: { type: "idle" } } }),
+      messages: vi.fn().mockResolvedValue({
+        data: [
+          { role: "user", parts: [{ type: "text", text: "fix the bug" }] },
+          { role: "assistant", parts: [{ type: "text", text: "Here is the code fix." }] },
+        ],
       }),
     },
   })),

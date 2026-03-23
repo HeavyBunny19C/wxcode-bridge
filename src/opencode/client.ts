@@ -32,18 +32,68 @@ export class OpenCodeClient {
 
   async sendPrompt(sessionId: string, text: string): Promise<string> {
     log(`发送 prompt 到 session ${sessionId}: ${text.slice(0, 50)}...`);
-    const result = await this.client.session.prompt({
+
+    await this.client.session.promptAsync({
       path: { id: sessionId },
       body: {
         parts: [{ type: "text" as const, text }],
       },
     });
 
-    const data = result.data as any;
-    const parts: any[] = data?.parts ?? [];
-    const textParts = parts
-      .filter((p) => p.type === "text")
-      .map((p) => p.text ?? "");
-    return textParts.join("\n");
+    const response = await this.waitForResponse(sessionId);
+    return response;
+  }
+
+  private async waitForResponse(sessionId: string, timeoutMs = 300_000): Promise<string> {
+    const deadline = Date.now() + timeoutMs;
+    const pollInterval = 2_000;
+
+    await new Promise((r) => setTimeout(r, 1_000));
+
+    while (Date.now() < deadline) {
+      try {
+        const status = await this.client.session.status();
+        const allStatus = status.data as any;
+        const sessionStatus = allStatus?.[sessionId];
+        log(`session status: ${JSON.stringify(sessionStatus)}`);
+
+        if (!sessionStatus || sessionStatus.type === "idle") {
+          return await this.getLatestAssistantMessage(sessionId);
+        }
+      } catch (err: any) {
+        log(`status check error: ${err?.message}`);
+      }
+
+      await new Promise((r) => setTimeout(r, pollInterval));
+    }
+
+    log("waitForResponse timeout, fetching latest message anyway");
+    return await this.getLatestAssistantMessage(sessionId);
+  }
+
+  private async getLatestAssistantMessage(sessionId: string): Promise<string> {
+    log(`fetching messages for session ${sessionId}`);
+    const msgs = await this.client.session.messages({ path: { id: sessionId } });
+    const messageList = (msgs.data as any[]) ?? [];
+    log(`got ${messageList.length} messages`);
+
+    for (let i = messageList.length - 1; i >= 0; i--) {
+      const msg = messageList[i];
+      const role = msg.role ?? msg.info?.role;
+      if (role === "assistant") {
+        const parts: any[] = msg.parts ?? [];
+        const textParts = parts
+          .filter((p) => p.type === "text")
+          .map((p) => p.text ?? "");
+        const result = textParts.join("\n").trim();
+        if (result) {
+          log(`found reply: ${result.slice(0, 100)}...`);
+          return result;
+        }
+      }
+    }
+
+    log("no assistant text found");
+    return "(OpenCode 未返回文本回复)";
   }
 }
