@@ -1,0 +1,76 @@
+import type { GetUpdatesResponse } from "./types";
+import { buildHeaders } from "./auth";
+import { LONG_POLL_TIMEOUT_MS, CHANNEL_VERSION } from "../config";
+
+export function generateClientId(): string {
+  return `wechat-opencode:${Date.now()}:${Math.random().toString(36).slice(2, 11)}`;
+}
+
+export async function getUpdates(
+  baseUrl: string,
+  token: string,
+  syncBuf: string
+): Promise<GetUpdatesResponse> {
+  try {
+    const url = `${baseUrl}/ilink/bot/get_updates`;
+    const body = {
+      get_updates_buf: syncBuf,
+      longpolling_timeout_ms: LONG_POLL_TIMEOUT_MS,
+    };
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: buildHeaders(token, body),
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(LONG_POLL_TIMEOUT_MS + 5000),
+    });
+
+    if (!response.ok) {
+      throw new Error(`getUpdates failed: ${response.status}`);
+    }
+
+    const text = await response.text();
+    return JSON.parse(text);
+  } catch (error: any) {
+    // Timeout is normal for long-polling
+    if (error.name === "AbortError") {
+      return { msgs: [], get_updates_buf: syncBuf };
+    }
+    throw error;
+  }
+}
+
+export async function sendTextMessage(
+  baseUrl: string,
+  token: string,
+  toUserId: string,
+  text: string,
+  contextToken?: string
+): Promise<string> {
+  const clientId = generateClientId();
+  const url = `${baseUrl}/ilink/bot/send_message`;
+  
+  const body = {
+    to_user_id: toUserId,
+    client_id: clientId,
+    message_type: 2, // bot message
+    item_list: [{
+      type: 1, // text
+      text_item: { text },
+    }],
+    context_token: contextToken,
+    channel_version: CHANNEL_VERSION,
+  };
+
+  const response = await fetch(url, {
+    method: "POST",
+    headers: buildHeaders(token, body),
+    body: JSON.stringify(body),
+  });
+
+  if (!response.ok) {
+    throw new Error(`sendTextMessage failed: ${response.status}`);
+  }
+
+  return clientId;
+}
